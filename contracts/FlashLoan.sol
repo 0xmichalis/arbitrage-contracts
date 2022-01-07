@@ -4,17 +4,19 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./FlashLoanReceiverBase.sol";
+import "./interfaces/IFlashLoanReceiver.sol";
 import "./interfaces/ILendingPool.sol";
 import "./interfaces/ILendingPoolAddressesProvider.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 
 
-contract FlashLoan is FlashLoanReceiverBase, Ownable {
+contract FlashLoan is IFlashLoanReceiver, Ownable {
     /************************************************
      *  VARIABLES
      ***********************************************/
 
+    /// @notice Lending pool that supports flashloans
+    ILendingPool private immutable lendingPool;
     /// @notice Keeper is allowed to execute flashloans
     address private keeper;
     /// @notice Router to execute swaps
@@ -32,7 +34,8 @@ contract FlashLoan is FlashLoanReceiverBase, Ownable {
         ILendingPoolAddressesProvider _provider,
         IUniswapV2Router02 _router,
         address _keeper
-    ) FlashLoanReceiverBase(_provider) payable {
+    ) payable {
+        lendingPool = ILendingPool(_provider.getLendingPool());
         router = _router;
         keeper = _keeper;
     }
