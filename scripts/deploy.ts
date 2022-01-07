@@ -9,16 +9,16 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 async function main() {
-  const router = process.env.LIQUIDITY_ROUTER
-    ? process.env.LIQUIDITY_ROUTER
-    : "";
   const provider = process.env.LENDING_POOL_PROVIDER
     ? process.env.LENDING_POOL_PROVIDER
+    : "";
+  const router = process.env.LIQUIDITY_ROUTER
+    ? process.env.LIQUIDITY_ROUTER
     : "";
   const keeper = process.env.KEEPER_ADDRESS ? process.env.KEEPER_ADDRESS : "";
 
   const FlashLoan = await ethers.getContractFactory("FlashLoan");
-  const flashloan = await FlashLoan.deploy(router, provider, keeper);
+  const flashloan = await FlashLoan.deploy(provider, router, keeper);
   await flashloan.deployed();
 
   console.log("FlashLoan deployed to:", flashloan.address);
