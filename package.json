@@ -37,8 +37,6 @@
   "license": "Anti-996 License Version 1.0",
   "scripts": {
     "build": "npx hardhat compile",
-    "test": "npx hardhat test",
-    "coverage": "npx hardhat coverage --network coverage",
     "deploy": "npx hardhat run --network"
   }
 }

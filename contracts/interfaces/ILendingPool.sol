@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: Anti-996 License
 pragma solidity ^0.8.10;
 
-import { DataTypes } from "../libraries/DataTypes.sol";
-import { ILendingPoolAddressesProvider } from "./ILendingPoolAddressesProvider.sol";
+import "../libraries/DataTypes.sol";
+import "./ILendingPoolAddressesProvider.sol";
 
 
 interface ILendingPool {
