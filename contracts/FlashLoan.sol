@@ -81,7 +81,7 @@ contract FlashLoan is FlashLoanReceiverBase, Ownable {
      ***********************************************/
 
     /**
-        @dev This function is called after our contract has received the flash loaned amount
+        @notice This function is called after our contract has received the flash loaned amount
         @param assets Assets to borrow; should only be one
         @param amounts Amounts to borrow; should only be one
         @param premiums Premium to pay back on top of borrowed amount; should only be one
@@ -158,7 +158,23 @@ contract FlashLoan is FlashLoanReceiverBase, Ownable {
      *  FUND RETRIEVAL
      ***********************************************/
 
+    /**
+        @notice Withdraw any type of token from the contract back to the owner
+        @param asset Asset to withdraw
+    */
     function withdraw(address asset) public {
         IERC20(asset).transfer(owner(), IERC20(asset).balanceOf(address(this)));
+    }
+
+    /************************************************
+     *  MAINTENANCE
+     ***********************************************/
+
+    /**
+        @notice Update keeper to a new address
+        @param newKeeper New keeper address
+    */
+    function changeKeeper(address newKeeper) public onlyOwner {
+        keeper = newKeeper;
     }
 }
