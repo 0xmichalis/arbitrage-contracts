@@ -17,10 +17,10 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
 
     /// @notice Lending pool that supports flashloans
     ILendingPool private immutable lendingPool;
-    /// @notice Keeper is allowed to execute flashloans
-    address private keeper;
     /// @notice Router to execute swaps
     IUniswapV2Router02 private immutable router;
+    /// @notice Keeper is allowed to execute flashloans
+    address private keeper;
 
     /************************************************
      *  CONSTRUCTOR
@@ -29,6 +29,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     /**
         @param _provider Lending provider that supports flashloans
         @param _router Router to execute swaps
+        @param _keeper Keeper role, can request flashloans
      */
     constructor(
         ILendingPoolAddressesProvider _provider,
