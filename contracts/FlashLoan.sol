@@ -65,7 +65,7 @@ contract FlashLoan is FlashLoanReceiverBase, Ownable {
         uint256[] memory modes = new uint256[](7);
         modes[0] = 0;
 
-        LENDING_POOL.flashLoan(
+        lendingPool.flashLoan(
             address(this), // receiving address
             assets,
             amounts,
@@ -149,7 +149,7 @@ contract FlashLoan is FlashLoanReceiverBase, Ownable {
         // Approve the LendingPool contract allowance to *pull* the owed amount
         uint amountOwing = amounts[0] + premiums[0];
         require(amountsOut[0] > amountOwing, "not enough funds swept");
-        IERC20(assets[0]).approve(address(LENDING_POOL), amountOwing);
+        IERC20(assets[0]).approve(address(lendingPool), amountOwing);
 
         return true;
     }
