@@ -24,15 +24,17 @@ async function addLiquidity(
 ) {
     if (await a.allowance(me.address, routerAddress) == 0) {
         console.log(`Approving router in ${a.address}`);
-        await a.approve(routerAddress, amountA);
+        const tx = await a.approve(routerAddress, amountA);
+        await tx.wait();
     }
     if (await b.allowance(me.address, routerAddress) == 0) {
         console.log(`Approving router in ${b.address}`);
-        await b.approve(routerAddress, amountB);
+        const tx = await b.approve(routerAddress, amountB);
+        await tx.wait();
     }
     const router = new ethers.Contract(routerAddress, uniRouterAbi, me);
     console.log(`Adding liquidity for pair ${a.address} x ${b.address}`);
-    await router.addLiquidity(
+    const tx = await router.addLiquidity(
         a.address,
         b.address,
         amountA,
@@ -42,6 +44,7 @@ async function addLiquidity(
         me.address,
         Date.now() + 3600
     );
+    await tx.wait();
 }
 
 const erc20Abi = new ethers.utils.Interface([
