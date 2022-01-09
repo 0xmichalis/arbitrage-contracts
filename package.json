@@ -34,10 +34,11 @@
     "typechain": "^5.1.2",
     "typescript": "^4.5.2"
   },
-  "license": "Anti-996 License Version 1.0",
+  "license": "Apache-2.0",
   "scripts": {
     "build": "npx hardhat compile",
     "clean": "npx hardhat clean",
-    "deploy": "npx hardhat run --network"
+    "deploy": "npx hardhat run --network",
+    "deploy-mocks": "npx hardhat run --network kovan scripts/deploy-mocks.ts"
   }
 }

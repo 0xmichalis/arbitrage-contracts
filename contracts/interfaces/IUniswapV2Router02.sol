@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Anti-996 License
+//SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.10;
 
 interface IUniswapV2Router02 {

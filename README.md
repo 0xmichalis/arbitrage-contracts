@@ -9,6 +9,13 @@ yarn
 yarn build
 ```
 
+## Test
+
+Deploy mock contracts
+```
+yarn deploy-mocks
+```
+
 ## Contracts
 
 ### USDC
