@@ -19,19 +19,19 @@ async function addLiquidity(
     me: SignerWithAddress,
     a: Contract,
     b: Contract,
-    amountA: number,
-    amountB: number
+    amountA: BigNumber,
+    amountB: BigNumber
 ) {
     if (await a.allowance(me.address, routerAddress) == 0) {
         console.log(`Approving router in ${a.address}`);
-        await a.approve(routerAddress, BigNumber.from(Number.MAX_SAFE_INTEGER));
+        await a.approve(routerAddress, amountA);
     }
     if (await b.allowance(me.address, routerAddress) == 0) {
         console.log(`Approving router in ${b.address}`);
-        await b.approve(routerAddress, BigNumber.from(Number.MAX_SAFE_INTEGER));
+        await b.approve(routerAddress, amountB);
     }
-    const router = new ethers.Contract(routerAddress, uniRouterAbi);
-    console.log(`Adding liquidity for ${a.address}/${b.address}`);
+    const router = new ethers.Contract(routerAddress, uniRouterAbi, me);
+    console.log(`Adding liquidity for pair ${a.address} x ${b.address}`);
     await router.addLiquidity(
         a.address,
         b.address,
@@ -39,7 +39,7 @@ async function addLiquidity(
         amountB,
         amountA,
         amountB,
-        me,
+        me.address,
         Date.now() + 3600
     );
 }
@@ -63,29 +63,29 @@ async function main() {
     // 40M USDC
     // 20M CC01
     // CC01 price: 2 USDC
-    const usdcAmount = 40000000 * 1e6;
-    const cc01Amount = 20000000 * 1e18;
-    await addLiquidity(me, usdc, cc01, usdcAmount, cc01Amount);
+    const usdcAmount = ethers.utils.parseUnits("40000000", 6);
+    const cc01Amount = ethers.utils.parseUnits("20000000");
+    await addLiquidity(me, usdc, cc02, usdcAmount, cc01Amount);
     console.log("USDC/CC01 liquidity addded");
 
     // 5M PERIVALON
     // 20M CC01
     // PERIVALON price: 8 USDC
-    const pAmount = 5000000 * 1e9;
+    const pAmount = ethers.utils.parseUnits("5000000", 9);
     await addLiquidity(me, perivalon, cc01, pAmount, cc01Amount);
     console.log("PERIVALON/CC01 liquidity addded");
 
     // 40M USDC
     // 10M CC02
     // CC02 price: 4 USDC
-    const cc02Amount = 10000000 * 1e18;
+    const cc02Amount = ethers.utils.parseUnits("10000000");
     await addLiquidity(me, usdc, cc02, usdcAmount, cc02Amount);
     console.log("USDC/CC02 liquidity addded");
 
     // 4M PERIVALON
     // 10M CC02
     // PERIVALON price: 10 USDC
-    const p2Amount = 4000000 * 1e9;
+    const p2Amount = ethers.utils.parseUnits("4000000", 9);
     await addLiquidity(me, perivalon, cc02, p2Amount, cc02Amount);
     console.log("PERIVALON/CC02 liquidity addded");
 }
