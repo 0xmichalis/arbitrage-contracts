@@ -11,10 +11,26 @@ yarn build
 
 ## Test
 
-Deploy mock contracts
+We use Kovan to test the flashloan arbitrage.
+
+First, prepare your `.env` file accordingly.
+
+Deploy mock contracts:
 ```
 yarn deploy-mocks
 ```
+
+Update the contracts in `scripts/add-liquidity.ts`, if you want to
+create the liquidity pools automatically and run the following command:
+```
+yarn add-liquidity
+```
+
+Finally, deploy the flashloan contract:
+```
+yarn deploy kovan scripts/deploy.ts
+```
+
 
 ## Contracts
 

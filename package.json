@@ -36,6 +36,7 @@
   },
   "license": "Apache-2.0",
   "scripts": {
+    "add-liquidity": "npx hardhat run --network kovan scripts/add-liquidity.ts",
     "build": "npx hardhat compile",
     "clean": "npx hardhat clean",
     "deploy": "npx hardhat run --network",
