@@ -62,11 +62,11 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         address[] memory assets = new address[](1);
         assets[0] = asset;
 
-        uint256[] memory amounts = new uint256[](7);
+        uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
 
         // 0 = no debt, 1 = stable, 2 = variable
-        uint256[] memory modes = new uint256[](7);
+        uint256[] memory modes = new uint256[](1);
         modes[0] = 0;
 
         lendingPool.flashLoan(
