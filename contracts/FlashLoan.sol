@@ -90,7 +90,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         @param amounts Amounts to borrow; should only be one
         @param premiums Premium to pay back on top of borrowed amount; should only be one
         @param initiator Account who initiated the flashloan
-        @param params Custom parameters forwarded by the flashloan requestl should be 4 addresses
+        @param params Custom parameters forwarded by the flashloan request; should be 4 addresses
      */
     function executeOperation(
         address[] calldata assets,
@@ -108,38 +108,23 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         require(path.length == 4, "path needs 4 addresses");
 
         // Execute first leg
-        // Supporting zero addresses here as a hack to allow passing
-        // paths with one and/or two liquidity pools. It is assumed
-        // that only the second or the fourth address can be zero.
-        // It is also assumed here that the asset got from the last
-        // path is what we borrowed so the onus is on the client to
+        // It is assumed here that the asset got from the last path
+        // is what we borrowed so the onus is on the client to
         // set the right paths and path order.
-        address[] memory swapPath;
-        if (path[1] == address(0)) {
-            swapPath = new address[](1);
-            swapPath[0] = path[0];
-        } else {
-            swapPath = new address[](2);
-            swapPath[0] = path[0];
-            swapPath[1] = path[1];
-        }
+        address[] memory swapPath = new address[](2);
+        swapPath[0] = path[0];
+        swapPath[1] = path[1];
         uint[] memory amountsOut = router.swapExactTokensForTokens(
             amounts[0],
-            0, // Probably slippage does not matter
+            0, // Probably slippage does not matter (famous last words)
             swapPath,
             address(this),
             block.timestamp + 300 // 5 minutes deadline, already too much
         );
 
         // Execute second leg
-        if (path[3] == address(0)) {
-            swapPath = new address[](1);
-            swapPath[0] = path[2];
-        } else {
-            swapPath = new address[](1);
-            swapPath[0] = path[2];
-            swapPath[1] = path[3];
-        }
+        swapPath[0] = path[2];
+        swapPath[1] = path[3];
         amountsOut = router.swapExactTokensForTokens(
             amountsOut[0],
             0,
