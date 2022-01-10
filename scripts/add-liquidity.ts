@@ -68,7 +68,7 @@ async function main() {
     // CC01 price: 2 USDC
     const usdcAmount = ethers.utils.parseUnits("40000000", 6);
     const cc01Amount = ethers.utils.parseUnits("20000000");
-    await addLiquidity(me, usdc, cc02, usdcAmount, cc01Amount);
+    await addLiquidity(me, usdc, cc01, usdcAmount, cc01Amount);
     console.log("USDC/CC01 liquidity addded");
 
     // 5M PERIVALON
@@ -79,17 +79,18 @@ async function main() {
     console.log("PERIVALON/CC01 liquidity addded");
 
     // 40M USDC
-    // 10M CC02
-    // CC02 price: 4 USDC
-    const cc02Amount = ethers.utils.parseUnits("10000000");
+    // 20M CC02
+    // CC02 price: 2 USDC
+    const cc02Amount = ethers.utils.parseUnits("20000000");
     await addLiquidity(me, usdc, cc02, usdcAmount, cc02Amount);
     console.log("USDC/CC02 liquidity addded");
 
     // 4M PERIVALON
     // 10M CC02
-    // PERIVALON price: 10 USDC
+    // PERIVALON price: 5 USDC
     const p2Amount = ethers.utils.parseUnits("4000000", 9);
-    await addLiquidity(me, perivalon, cc02, p2Amount, cc02Amount);
+    const cc202Amount = ethers.utils.parseUnits("10000000");
+    await addLiquidity(me, perivalon, cc02, p2Amount, cc202Amount);
     console.log("PERIVALON/CC02 liquidity addded");
 }
 
