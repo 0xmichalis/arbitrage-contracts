@@ -9,7 +9,16 @@ import "./interfaces/ILendingPool.sol";
 import "./interfaces/ILendingPoolAddressesProvider.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 
-
+/*
+* This contract utilizes AAVE flashloans to arbitrage pairs
+* in Uniswap v2 with certain characteristics:
+*
+* 1. It is assumed that the first and last assets in the path
+*    provided to flashloan are the same so we have effectively
+*    an arbitrage opportunity.
+* 2. AAVE, or any lending platform that provides flashloans and
+*    utilizes AAVE's interface, has to support lending that asset.
+*/
 contract FlashLoan is IFlashLoanReceiver, Ownable {
     /************************************************
      *  VARIABLES
@@ -29,16 +38,19 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     /**
         @param _provider Lending provider that supports flashloans
         @param _router Router to execute swaps
+        @param _asset Asset being arbed; increasing router's allowance
         @param _keeper Keeper role, can request flashloans
      */
     constructor(
         ILendingPoolAddressesProvider _provider,
         IUniswapV2Router02 _router,
+        address _asset,
         address _keeper
     ) payable {
         lendingPool = ILendingPool(_provider.getLendingPool());
         router = _router;
         keeper = _keeper;
+        IERC20(_asset).approve(address(_router), type(uint256).max);
     }
 
     /************************************************
@@ -57,7 +69,6 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         address[] calldata path
     ) public {
         require(msg.sender == owner() || msg.sender == keeper, "invalid sender");
-        require(path.length == 4, "path needs 4 addresses");
 
         address[] memory assets = new address[](1);
         assets[0] = asset;
@@ -90,7 +101,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         @param amounts Amounts to borrow; should only be one
         @param premiums Premium to pay back on top of borrowed amount; should only be one
         @param initiator Account who initiated the flashloan
-        @param params Custom parameters forwarded by the flashloan request; should be 4 addresses
+        @param params Custom parameters forwarded by the flashloan request; should be the path to swap
      */
     function executeOperation(
         address[] calldata assets,
@@ -105,30 +116,12 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     {
         require(initiator == address(this) || initiator == owner() || initiator == keeper, "invalid initiator");
         address[] memory path = abi.decode(params, (address[]));
-        require(path.length == 4, "path needs 4 addresses");
 
-        // Execute first leg
-        // It is assumed here that the asset got from the last path
-        // is what we borrowed so the onus is on the client to
-        // set the right paths and path order.
-        address[] memory swapPath = new address[](2);
-        swapPath[0] = path[0];
-        swapPath[1] = path[1];
+        // Execute swap
         uint[] memory amountsOut = router.swapExactTokensForTokens(
             amounts[0],
-            0, // Probably slippage does not matter (famous last words)
-            swapPath,
-            address(this),
-            block.timestamp + 300 // 5 minutes deadline, already too much
-        );
-
-        // Execute second leg
-        swapPath[0] = path[2];
-        swapPath[1] = path[3];
-        amountsOut = router.swapExactTokensForTokens(
-            amountsOut[0],
             0,
-            swapPath,
+            path,
             address(this),
             block.timestamp + 300
         );
@@ -137,7 +130,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         // Therefore we need to ensure we have enough to repay these amounts.
         // Approve the LendingPool contract allowance to *pull* the owed amount
         uint amountOwing = amounts[0] + premiums[0];
-        require(amountsOut[0] > amountOwing, "not enough funds swept");
+        require(amountsOut[path.length - 1] > amountOwing, "not enough funds swept");
         IERC20(assets[0]).approve(address(lendingPool), amountOwing);
 
         return true;

@@ -8,11 +8,6 @@ import { ethers } from "hardhat";
 
 async function main() {
     // Deploy mocks
-    const USDC = await ethers.getContractFactory("USDC");
-    const usdc = await USDC.deploy();
-    await usdc.deployed();
-    console.log("USDC deployed to:", usdc.address);
-
     const PERIVALON = await ethers.getContractFactory("PERIVALON");
     const perivalon = await PERIVALON.deploy();
     await perivalon.deployed();
