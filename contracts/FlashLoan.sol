@@ -21,7 +21,7 @@ import "./interfaces/IUniswapV2Router02.sol";
 */
 contract FlashLoan is IFlashLoanReceiver, Ownable {
     /************************************************
-     *  VARIABLES
+     *  CONSTANTS & VARIABLES
      ***********************************************/
 
     /// @notice Lending pool that supports flashloans
@@ -31,6 +31,22 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     /// @notice Keeper is allowed to execute flashloans
     address private keeper;
 
+
+    /************************************************
+     *  MODIFIERS
+     ***********************************************/
+
+    modifier onlyLendingPool() {
+        require(msg.sender == address(lendingPool), "!lendingPool");
+        _;
+    }
+
+    modifier onlyKeeper() {
+        require(msg.sender == keeper, "!keeper");
+        _;
+    }
+
+
     /************************************************
      *  CONSTRUCTOR
      ***********************************************/
@@ -39,17 +55,15 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         @param _provider Lending provider that supports flashloans
         @param _router Router to execute swaps
         @param _asset Asset being arbed; increasing router's allowance
-        @param _keeper Keeper role, can request flashloans
      */
     constructor(
         ILendingPoolAddressesProvider _provider,
         IUniswapV2Router02 _router,
-        address _asset,
-        address _keeper
+        address _asset
     ) payable {
         lendingPool = ILendingPool(_provider.getLendingPool());
         router = _router;
-        keeper = _keeper;
+        keeper = msg.sender;
         IERC20(_asset).approve(address(_router), type(uint256).max);
     }
 
@@ -67,9 +81,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         address asset,
         uint256 amount,
         address[] calldata path
-    ) public {
-        require(msg.sender == owner() || msg.sender == keeper, "invalid sender");
-
+    ) public onlyKeeper {
         address[] memory assets = new address[](1);
         assets[0] = asset;
 
@@ -85,7 +97,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
             assets,
             amounts,
             modes,
-            address(this), // on-behalf-of
+            address(0), // on-behalf-of
             abi.encode(path), // params
             0 // referal code
         );
@@ -112,9 +124,10 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     )
         external
         override
+        onlyLendingPool
         returns (bool)
     {
-        require(initiator == address(this) || initiator == owner() || initiator == keeper, "invalid initiator");
+        require(initiator == address(this), "invalid initiator");
         address[] memory path = abi.decode(params, (address[]));
 
         // Execute swap

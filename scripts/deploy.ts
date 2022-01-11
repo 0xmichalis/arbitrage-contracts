@@ -16,10 +16,9 @@ async function main() {
     ? process.env.LIQUIDITY_ROUTER
     : "";
   const asset = process.env.BORROWED_ASSET ? process.env.BORROWED_ASSET : "";
-  const keeper = process.env.KEEPER_ADDRESS ? process.env.KEEPER_ADDRESS : "";
 
   const FlashLoan = await ethers.getContractFactory("FlashLoan");
-  const flashloan = await FlashLoan.deploy(provider, router, asset, keeper);
+  const flashloan = await FlashLoan.deploy(provider, router, asset);
   await flashloan.deployed();
 
   console.log("FlashLoan deployed to:", flashloan.address);
