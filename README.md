@@ -35,6 +35,10 @@ Finally, deploy the flashloan contract:
 yarn deploy kovan scripts/deploy.ts
 ```
 
+Now, you can submit a flashloan request with a path that includes an
+arbitrage and it should be successfully executed by the contract. An
+example client of this contract can be found [here](https://github.com/kargakis/arbitragoor).
+
 ## Contracts
 
 | Contract              | Matic                                                                                                                    | Kovan                                                                                                                       |
