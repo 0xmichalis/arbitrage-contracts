@@ -64,7 +64,9 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         lendingPool = ILendingPool(_provider.getLendingPool());
         router = _router;
         keeper = msg.sender;
+        // Insecure, but reduced gas in executeOperation
         IERC20(_asset).approve(address(_router), type(uint256).max);
+        IERC20(_asset).approve(address(lendingPool), type(uint256).max);
     }
 
     /************************************************
@@ -143,8 +145,9 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         // Therefore we need to ensure we have enough to repay these amounts.
         // Approve the LendingPool contract allowance to *pull* the owed amount
         uint amountOwing = amounts[0] + premiums[0];
+        // It is assumed here that the client that constructs the path is trusted
+        // and has done the construction properly, otherwise we may get rekt.
         require(amountsOut[path.length - 1] > amountOwing, "not enough funds swept");
-        IERC20(assets[0]).approve(address(lendingPool), amountOwing);
 
         return true;
     }
