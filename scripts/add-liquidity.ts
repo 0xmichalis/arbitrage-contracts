@@ -10,7 +10,8 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 dotenv.config();
 
-const routerAddress = process.env.LIQUIDITY_ROUTER ? process.env.LIQUIDITY_ROUTER: "";
+const router0 = process.env.LIQUIDITY_ROUTER_0 ? process.env.LIQUIDITY_ROUTER_0: "";
+const router1 = process.env.LIQUIDITY_ROUTER_1 ? process.env.LIQUIDITY_ROUTER_1: "";
 const uniRouterAbi = new ethers.utils.Interface([
     'function addLiquidity(address tokenA,address tokenB,uint amountADesired,uint amountBDesired,uint amountAMin,uint amountBMin,address to,uint deadline) external returns (uint amountA, uint amountB, uint liquidity)',
 ]);
@@ -20,8 +21,10 @@ async function addLiquidity(
     a: Contract,
     b: Contract,
     amountA: BigNumber,
-    amountB: BigNumber
+    amountB: BigNumber,
+    isFirst: boolean
 ) {
+    const routerAddress = isFirst ? router0 : router1;
     if (await a.allowance(me.address, routerAddress) == 0) {
         console.log(`Approving router in ${a.address}`);
         const tx = await a.approve(routerAddress, amountA);
@@ -33,7 +36,7 @@ async function addLiquidity(
         await tx.wait();
     }
     const router = new ethers.Contract(routerAddress, uniRouterAbi, me);
-    console.log(`Adding liquidity for pair ${a.address} x ${b.address}`);
+    console.log(`Adding liquidity in ${isFirst ? "first": "second"} router for pair ${a.address} x ${b.address}`);
     const tx = await router.addLiquidity(
         a.address,
         b.address,
@@ -68,21 +71,21 @@ async function main() {
     // CC01 price: 2 USDC
     const usdcAmount = ethers.utils.parseUnits("40000000", 6);
     const cc01Amount = ethers.utils.parseUnits("20000000");
-    await addLiquidity(me, usdc, cc01, usdcAmount, cc01Amount);
+    await addLiquidity(me, usdc, cc01, usdcAmount, cc01Amount, true);
     console.log("USDC/CC01 liquidity addded");
 
     // 5M PERIVALON
     // 20M CC01
     // PERIVALON price: 8 USDC
     const pAmount = ethers.utils.parseUnits("5000000", 9);
-    await addLiquidity(me, perivalon, cc01, pAmount, cc01Amount);
+    await addLiquidity(me, perivalon, cc01, pAmount, cc01Amount, true);
     console.log("PERIVALON/CC01 liquidity addded");
 
     // 40M USDC
     // 20M CC02
     // CC02 price: 2 USDC
     const cc02Amount = ethers.utils.parseUnits("20000000");
-    await addLiquidity(me, usdc, cc02, usdcAmount, cc02Amount);
+    await addLiquidity(me, usdc, cc02, usdcAmount, cc02Amount, false);
     console.log("USDC/CC02 liquidity addded");
 
     // 4M PERIVALON
@@ -90,7 +93,7 @@ async function main() {
     // PERIVALON price: 5 USDC
     const p2Amount = ethers.utils.parseUnits("4000000", 9);
     const cc202Amount = ethers.utils.parseUnits("10000000");
-    await addLiquidity(me, perivalon, cc02, p2Amount, cc202Amount);
+    await addLiquidity(me, perivalon, cc02, p2Amount, cc202Amount, false);
     console.log("PERIVALON/CC02 liquidity addded");
 }
 
