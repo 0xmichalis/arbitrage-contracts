@@ -27,7 +27,9 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     /// @notice Lending pool that supports flashloans
     ILendingPool private immutable lendingPool;
     /// @notice Router to execute swaps
-    IUniswapV2Router02 private immutable router;
+    IUniswapV2Router02 private immutable router0;
+    /// @notice Router to execute swaps
+    IUniswapV2Router02 private immutable router1;
     /// @notice Keeper is allowed to execute flashloans
     address private keeper;
 
@@ -53,20 +55,34 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
 
     /**
         @param _provider Lending provider that supports flashloans
-        @param _router Router to execute swaps
-        @param _asset Asset being arbed; increasing router's allowance
+        @param _router0 Router to execute swaps
+        @param _router1 Second router to execute swaps, in case there is need to swap across DEXs
+        @param _asset0 Asset being arbed; increasing router0's allowance
+        @param _asset1 Asset being arbed; increasing router1's allowance
      */
     constructor(
         ILendingPoolAddressesProvider _provider,
-        IUniswapV2Router02 _router,
-        address _asset
+        IUniswapV2Router02 _router0,
+        IUniswapV2Router02 _router1,
+        address _asset0,
+        address _asset1
     ) payable {
+        require(address(_provider) != address(0), "!_provider");
+        require(address(_router0) != address(0), "!_router0");
+        require(address(_asset0) != address(0), "!_asset0");
+        require(_asset1 != address(0), "!_asset1");
+
         lendingPool = ILendingPool(_provider.getLendingPool());
-        router = _router;
+        router0 = _router0;
+        router1 = _router1;
         keeper = msg.sender;
+
         // Insecure, but reduced gas in executeOperation
-        IERC20(_asset).approve(address(_router), type(uint256).max);
-        IERC20(_asset).approve(address(lendingPool), type(uint256).max);
+        IERC20(_asset0).approve(address(lendingPool), type(uint256).max);
+        IERC20(_asset0).approve(address(_router0), type(uint256).max);
+        IERC20(_asset1).approve(address(_router0), type(uint256).max);
+        IERC20(_asset0).approve(address(_router1), type(uint256).max);
+        IERC20(_asset1).approve(address(_router1), type(uint256).max);
     }
 
     /************************************************
@@ -77,12 +93,16 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         @notice Request a flashloan to be executed
         @param asset Asset to borrow
         @param amount Amount to borrow
-        @param path Complete path to follow in executeOperation
+        @param zeroToOne Direction of router usage; true means the first leg should be executed by router0, etc.
+        @param path0 First leg of swap follow in executeOperation
+        @param path1 Second leg of swap to follow in executeOperation
      */
     function flashloan(
         address asset,
         uint256 amount,
-        address[] calldata path
+        bool zeroToOne,
+        address[] calldata path0,
+        address[] calldata path1
     ) public onlyKeeper {
         address[] memory assets = new address[](1);
         assets[0] = asset;
@@ -100,7 +120,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
             amounts,
             modes,
             address(0), // on-behalf-of
-            abi.encode(path), // params
+            abi.encode(zeroToOne, path0, path1), // params
             0 // referal code
         );
     }
@@ -130,24 +150,46 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         returns (bool)
     {
         require(initiator == address(this), "invalid initiator");
-        address[] memory path = abi.decode(params, (address[]));
+        (
+            bool zeroToOne,
+            address[] memory path0,
+            address[] memory path1
+        ) = abi.decode(params, (bool, address[], address[]));
 
-        // Execute swap
-        uint[] memory amountsOut = router.swapExactTokensForTokens(
+        IUniswapV2Router02 _router0;
+        IUniswapV2Router02 _router1;
+        if (zeroToOne) {
+           _router0 = router0;
+           _router1 = router1;
+        } else {
+           _router0 = router1;
+           _router1 = router0;
+        }
+
+        // Execute first leg of the swap
+        uint[] memory amountsOut = _router0.swapExactTokensForTokens(
             amounts[0],
             0,
-            path,
+            path0,
+            address(this),
+            block.timestamp + 300
+        );
+
+        // Execute second leg of the swap
+        amountsOut = _router1.swapExactTokensForTokens(
+            amountsOut[path0.length - 1],
+            0,
+            path1,
             address(this),
             block.timestamp + 300
         );
 
         // At the end of our logic above, we owe the flashloaned amounts + premiums.
         // Therefore we need to ensure we have enough to repay these amounts.
-        // Approve the LendingPool contract allowance to *pull* the owed amount
         uint amountOwing = amounts[0] + premiums[0];
         // It is assumed here that the client that constructs the path is trusted
         // and has done the construction properly, otherwise we may get rekt.
-        require(amountsOut[path.length - 1] > amountOwing, "not enough funds swept");
+        require(amountsOut[path1.length - 1] > amountOwing, "not enough funds swept");
 
         return true;
     }

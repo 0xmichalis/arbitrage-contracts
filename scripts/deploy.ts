@@ -12,13 +12,17 @@ async function main() {
   const provider = process.env.LENDING_POOL_PROVIDER
     ? process.env.LENDING_POOL_PROVIDER
     : "";
-  const router = process.env.LIQUIDITY_ROUTER
-    ? process.env.LIQUIDITY_ROUTER
+  const router0 = process.env.LIQUIDITY_ROUTER_0
+    ? process.env.LIQUIDITY_ROUTER_0
     : "";
-  const asset = process.env.BORROWED_ASSET ? process.env.BORROWED_ASSET : "";
+  const router1 = process.env.LIQUIDITY_ROUTER_1
+    ? process.env.LIQUIDITY_ROUTER_1
+    : "";
+  const arbedAsset = process.env.ARBED_ASSET ? process.env.ARBED_ASSET : "";
+  const borrowedAsset = process.env.BORROWED_ASSET ? process.env.BORROWED_ASSET : "";
 
   const FlashLoan = await ethers.getContractFactory("FlashLoan");
-  const flashloan = await FlashLoan.deploy(provider, router, asset);
+  const flashloan = await FlashLoan.deploy(provider, router0, router1, borrowedAsset, arbedAsset);
   await flashloan.deployed();
 
   console.log("FlashLoan deployed to:", flashloan.address);
