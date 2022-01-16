@@ -69,7 +69,8 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     ) payable {
         require(address(_provider) != address(0), "!_provider");
         require(address(_router0) != address(0), "!_router0");
-        require(address(_asset0) != address(0), "!_asset0");
+        require(address(_router1) != address(0), "!_router1");
+        require(_asset0 != address(0), "!_asset0");
         require(_asset1 != address(0), "!_asset1");
 
         lendingPool = ILendingPool(_provider.getLendingPool());
@@ -93,16 +94,18 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         @notice Request a flashloan to be executed
         @param asset Asset to borrow
         @param amount Amount to borrow
-        @param zeroToOne Direction of router usage; true means the first leg should be executed by router0, etc.
         @param path0 First leg of swap follow in executeOperation
         @param path1 Second leg of swap to follow in executeOperation
+        @param path0Router Which of the two routers to use for the first path, 0 for router0, 1 for router1
+        @param path1Router Which of the two routers to use for the second path, 0 for router0, 1 for router1
      */
     function flashloan(
         address asset,
         uint256 amount,
-        bool zeroToOne,
         address[] calldata path0,
-        address[] calldata path1
+        address[] calldata path1,
+        uint8 path0Router,
+        uint8 path1Router
     ) public onlyKeeper {
         address[] memory assets = new address[](1);
         assets[0] = asset;
@@ -120,7 +123,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
             amounts,
             modes,
             address(0), // on-behalf-of
-            abi.encode(zeroToOne, path0, path1), // params
+            abi.encode(path0, path1, path0Router, path1Router), // params
             0 // referal code
         );
     }
@@ -150,36 +153,52 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         returns (bool)
     {
         require(initiator == address(this), "invalid initiator");
-        (
-            bool zeroToOne,
-            address[] memory path0,
-            address[] memory path1
-        ) = abi.decode(params, (bool, address[], address[]));
 
         IUniswapV2Router02 _router0;
         IUniswapV2Router02 _router1;
-        if (zeroToOne) {
-           _router0 = router0;
-           _router1 = router1;
-        } else {
-           _router0 = router1;
-           _router1 = router0;
+        address[] memory _path0;
+        address[] memory _path1;
+        // Work around stack too deep issue
+        {
+            // Decode parameters provided by the lending pool
+            (
+                address[] memory path0,
+                address[] memory path1,
+                uint8 path0Router,
+                uint8 path1Router
+            ) = abi.decode(params, (address[], address[], uint8, uint8));
+
+            // Set up paths
+            _path0 = path0;
+            _path1 = path1;
+
+            // Set up routers
+            if (path0Router == 0) {
+                _router0 = router0;
+            } else {
+                _router0 = router1;
+            }
+            if (path1Router == 0) {
+                _router1 = router0;
+            } else {
+                _router1 = router1;
+            }
         }
 
         // Execute first leg of the swap
         uint[] memory amountsOut = _router0.swapExactTokensForTokens(
             amounts[0],
             0,
-            path0,
+            _path0,
             address(this),
             block.timestamp + 300
         );
 
         // Execute second leg of the swap
         amountsOut = _router1.swapExactTokensForTokens(
-            amountsOut[path0.length - 1],
+            amountsOut[_path0.length - 1],
             0,
-            path1,
+            _path1,
             address(this),
             block.timestamp + 300
         );
@@ -189,7 +208,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         uint amountOwing = amounts[0] + premiums[0];
         // It is assumed here that the client that constructs the path is trusted
         // and has done the construction properly, otherwise we may get rekt.
-        require(amountsOut[path1.length - 1] > amountOwing, "not enough funds swept");
+        require(amountsOut[_path1.length - 1] > amountOwing, "not enough funds swept");
 
         return true;
     }

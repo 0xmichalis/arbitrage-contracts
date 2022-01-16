@@ -25,18 +25,22 @@ async function addLiquidity(
     isFirst: boolean
 ) {
     const routerAddress = isFirst ? router0 : router1;
-    if (await a.allowance(me.address, routerAddress) == 0) {
-        console.log(`Approving router in ${a.address}`);
+    const aAllowance = await a.allowance(me.address, routerAddress)
+    const aAllowanceBN = BigNumber.from(aAllowance)
+    if (aAllowanceBN.lt(amountA)) {
+        console.log(`Approving ${isFirst ? "first": "second"} router in ${a.address}`)
         const tx = await a.approve(routerAddress, amountA);
         await tx.wait();
     }
-    if (await b.allowance(me.address, routerAddress) == 0) {
-        console.log(`Approving router in ${b.address}`);
+    const bAllowance = await b.allowance(me.address, routerAddress)
+    const bAllowanceBN = BigNumber.from(bAllowance)
+    if (bAllowanceBN.lt(amountB)) {
+        console.log(`Approving ${isFirst ? "first": "second"} router in ${b.address}`)
         const tx = await b.approve(routerAddress, amountB);
         await tx.wait();
     }
     const router = new ethers.Contract(routerAddress, uniRouterAbi, me);
-    console.log(`Adding liquidity in ${isFirst ? "first": "second"} router for pair ${a.address} x ${b.address}`);
+    console.log(`Adding liquidity in ${isFirst ? "first": "second"} router for pair ${a.address} x ${b.address}`)
     const tx = await router.addLiquidity(
         a.address,
         b.address,
@@ -59,7 +63,7 @@ async function main() {
     const [me] = await ethers.getSigners()
 
     // Update mocks with proper addresses here
-    const usdc = new ethers.Contract("FILLME", erc20Abi, me);
+    const usdc = new ethers.Contract("0x13512979ade267ab5100878e2e0f485b568328a4", erc20Abi, me);
     const perivalon = new ethers.Contract("FILLME", erc20Abi, me);
     const cc01 = new ethers.Contract("FILLME", erc20Abi, me);
     const cc02 = new ethers.Contract("FILLME", erc20Abi, me);
