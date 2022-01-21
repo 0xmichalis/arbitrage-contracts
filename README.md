@@ -1,47 +1,29 @@
 # Arbitrage contracts
 
-Utilize flashloans to arbitrage Uniswap v2 AMMs.
+Utilize AAVE flashloans to arbitrage Uniswap v2 AMMs.
 
 ## Build
 
 ```
-yarn
-yarn build
+make build
 ```
 
-## Test
+## Deploy
 
-Kovan is used to test the flashloan arbitrage.
-
-First, prepare your `.env` file accordingly. No stablecoin token is
-deployed below, for that you will need to use the
-[AAVE faucet](https://staging.aave.com/#/faucet), otherwise we won't
-be able to execute flashloans if the borrowed asset is not whitelisted
-in AAVE.
-
-Deploy mock contracts:
+Updated `ARBED_ASSET` in Makefile with the asset you want to arb, then
+deploy in Kovan with:
 ```
-yarn deploy-mocks
+make deploy-kovan
 ```
 
-Update the contracts in `scripts/add-liquidity.ts`, if you want to
-create the liquidity pools automatically, and run the following command:
+Deploy in Polygon:
 ```
-yarn add-liquidity
+make deploy-polygon
 ```
-
-Finally, deploy the flashloan contract:
-```
-yarn deploy kovan scripts/deploy.ts
-```
-
-Now, you can submit a flashloan request with a path that includes an
-arbitrage and it should be successfully executed by the contract. An
-example client of this contract can be found [here](https://github.com/kargakis/arbitragoor).
 
 ## Contracts
 
-| Contract              | Matic                                                                                                                    | Kovan                                                                                                                       |
+| Contract              | Polygon                                                                                                                  | Kovan                                                                                                                       |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------------|------------|
 | USDC                  | [0x2791bca1f2de4661ed88a30c99a7a9449aa84174](https://polygonscan.com/address/0x2791bca1f2de4661ed88a30c99a7a9449aa84174) | Check [AAVE faucet](https://staging.aave.com/#/faucet)                                                                                         |
 | Lending pool provider | [0xd05e3E715d945B59290df0ae8eF85c1BdB684744](https://polygonscan.com/address/0xd05e3E715d945B59290df0ae8eF85c1BdB684744) | [0x88757f2f99175387aB4C6a4b3067c77A695b0349](https://kovan.etherscan.io/address/0x88757f2f99175387aB4C6a4b3067c77A695b0349) |

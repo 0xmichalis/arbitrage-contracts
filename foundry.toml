@@ -1,0 +1,9 @@
+[default]
+src = 'src'
+out = 'out'
+libs = ['lib']
+remappings = ['ds-test/=lib/ds-test/src/', '@openzeppelin/=lib/openzeppelin-contracts/']
+
+eth-rpc-url = "https://polygon-rpc.com/"
+
+# See more config options https://github.com/gakonst/foundry/tree/master/config

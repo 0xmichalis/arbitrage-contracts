@@ -57,21 +57,21 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         @param _provider Lending provider that supports flashloans
         @param _router0 Router to execute swaps
         @param _router1 Second router to execute swaps, in case there is need to swap across DEXs
-        @param _asset0 Asset being arbed; increasing router0's allowance
-        @param _asset1 Asset being arbed; increasing router1's allowance
+        @param _borrowedAsset Asset being borrowed to execute the flashloan
+        @param _arbedAsset Asset being arbitraged
      */
     constructor(
         ILendingPoolAddressesProvider _provider,
         IUniswapV2Router02 _router0,
         IUniswapV2Router02 _router1,
-        address _asset0,
-        address _asset1
+        address _borrowedAsset,
+        address _arbedAsset
     ) payable {
         require(address(_provider) != address(0), "!_provider");
         require(address(_router0) != address(0), "!_router0");
         require(address(_router1) != address(0), "!_router1");
-        require(_asset0 != address(0), "!_asset0");
-        require(_asset1 != address(0), "!_asset1");
+        require(_borrowedAsset != address(0), "!_borrowedAsset");
+        require(_arbedAsset != address(0), "!_arbedAsset");
 
         lendingPool = ILendingPool(_provider.getLendingPool());
         router0 = _router0;
@@ -79,11 +79,11 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         keeper = msg.sender;
 
         // Insecure, but reduced gas in executeOperation
-        IERC20(_asset0).approve(address(lendingPool), type(uint256).max);
-        IERC20(_asset0).approve(address(_router0), type(uint256).max);
-        IERC20(_asset1).approve(address(_router0), type(uint256).max);
-        IERC20(_asset0).approve(address(_router1), type(uint256).max);
-        IERC20(_asset1).approve(address(_router1), type(uint256).max);
+        IERC20(_borrowedAsset).approve(address(lendingPool), type(uint256).max);
+        IERC20(_borrowedAsset).approve(address(_router0), type(uint256).max);
+        IERC20(_arbedAsset).approve(address(_router0), type(uint256).max);
+        IERC20(_borrowedAsset).approve(address(_router1), type(uint256).max);
+        IERC20(_arbedAsset).approve(address(_router1), type(uint256).max);
     }
 
     /************************************************
