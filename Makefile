@@ -13,7 +13,7 @@ deploy-kovan:
 	             --constructor-args 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D \
 	             --constructor-args 0x13512979ade267ab5100878e2e0f485b568328a4 \
 	             --constructor-args $(ARBED_ASSET) \
-	             --rpc-url https://kovan.infura.io/ \
+	             --rpc-url https://kovan.infura.io/v3/ \
 				 --chain kovan -i FlashLoan
 .PHONY: deploy-kovan
 

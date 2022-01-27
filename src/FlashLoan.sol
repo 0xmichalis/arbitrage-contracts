@@ -33,18 +33,29 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
     /// @notice Keeper is allowed to execute flashloans
     address private keeper;
 
+    /************************************************
+     *  CUSTOM ERRORS
+     ***********************************************/
+
+    error InsufficientBalance();
+    error InvalidSender();
+
 
     /************************************************
      *  MODIFIERS
      ***********************************************/
 
     modifier onlyLendingPool() {
-        require(msg.sender == address(lendingPool), "!lendingPool");
+        if (msg.sender != address(lendingPool)) {
+            revert InvalidSender();
+        }
         _;
     }
 
     modifier onlyKeeper() {
-        require(msg.sender == keeper, "!keeper");
+        if (msg.sender != keeper) {
+            revert InvalidSender();
+        }
         _;
     }
 
@@ -152,7 +163,9 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         onlyLendingPool
         returns (bool)
     {
-        require(initiator == address(this), "invalid initiator");
+        if (initiator != address(this)) {
+            revert InvalidSender();
+        }
 
         IUniswapV2Router02 _router0;
         IUniswapV2Router02 _router1;
@@ -191,7 +204,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
             0,
             _path0,
             address(this),
-            block.timestamp + 300
+            block.timestamp
         );
 
         // Execute second leg of the swap
@@ -200,7 +213,7 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
             0,
             _path1,
             address(this),
-            block.timestamp + 300
+            block.timestamp
         );
 
         // At the end of our logic above, we owe the flashloaned amounts + premiums.
@@ -208,7 +221,9 @@ contract FlashLoan is IFlashLoanReceiver, Ownable {
         uint amountOwing = amounts[0] + premiums[0];
         // It is assumed here that the client that constructs the path is trusted
         // and has done the construction properly, otherwise we may get rekt.
-        require(amountsOut[_path1.length - 1] > amountOwing, "not enough funds swept");
+        if (amountOwing > amountsOut[_path1.length - 1]) {
+            revert InsufficientBalance();
+        }
 
         return true;
     }
