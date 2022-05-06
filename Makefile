@@ -1,6 +1,6 @@
 
 build: clean
-	forge build --optimize --optimize-runs 1000000
+	forge build --optimize --optimizer-runs 1000000
 .PHONY: build
 
 clean:
